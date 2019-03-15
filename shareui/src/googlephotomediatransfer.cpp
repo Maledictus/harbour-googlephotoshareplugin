@@ -64,31 +64,52 @@ void GooglePhotoMediaTransfer::start()
         return;
     }
 
+    connect(identity, &SignOn::Identity::info,
+            this, &GooglePhotoMediaTransfer::handleGotIdentityInfo);
     identity->queryInfo();
 
-    m_authSession = identity->createSession(QStringLiteral("oauth2"));
-    if (!m_authSession) {
+    SignOn::AuthSessionP authSession = identity->createSession(QStringLiteral("oauth2"));
+    if (!authSession) {
         qWarning() << "Could not create auth session for identity!";
         return;
     }
 
-    connect(m_authSession.data(), &SignOn::AuthSession::response,
+    connect(authSession.data(), &SignOn::AuthSession::response,
             this, &GooglePhotoMediaTransfer::handleGotAuthSessionResponce);
-    connect(m_authSession.data(), &SignOn::AuthSession::error, [](const SignOn::Error &err) {
+    connect(authSession.data(), &SignOn::AuthSession::error, [] (const SignOn::Error &err) {
         qWarning() << "SignOn error!: " << err.type() << err.message();
     });
-    qWarning() << Q_FUNC_INFO;
 
-    SignOn::SessionData sessionData;
-    sessionData.setUserName(accountId);
-    m_authSession->process(sessionData, QStringLiteral("web_server"));
+    SignOn::SessionData sessionData({
+            { "Host", "accounts.google.com" },
+            { "AuthPath", "o/oauth2/auth?access_type=offline" },
+            { "TokenPath","o/oauth2/token" },
+            { "RedirectUri", "urn:ietf:wg:oauth:2.0:oob"},
+            { "ResponseType", "code"},
+            { "ClientId", "844868161425-usj7ht7n97q02tq0n9ulvaf3rolhakjb.apps.googleusercontent.com"},
+            { "ClientSecret", "5aJTCCkCOLSc4uFfyv79wgpL" }
+                });
+    authSession->process(sessionData, QStringLiteral("web_server"));
+}
+
+void GooglePhotoMediaTransfer::handleGotIdentityInfo(const SignOn::IdentityInfo& info)
+{
+    qWarning() << Q_FUNC_INFO;
+    qWarning() << info.isStoringSecret()
+               << info.secret()
+               << info.type()
+               << info.methods()
+               << info.accessControlList()
+               << info.owner()
+               << info.caption()
+               << info.userName();
 }
 
 void GooglePhotoMediaTransfer::handleGotAuthSessionResponce(const SignOn::SessionData& sessionData)
 {
     qWarning() << Q_FUNC_INFO;
     qWarning() << sessionData.getAccessControlTokens()
-               << sessionData.propertyNames()
+               << sessionData.getProperty("AccessToken")
                << sessionData.Realm()
                << sessionData.RenewToken()
                << sessionData.WindowId()

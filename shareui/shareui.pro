@@ -34,3 +34,4 @@ SOURCES += \
 
 INCLUDEPATH += /usr/include
 INCLUDEPATH += /usr/include/accounts-qt5
+INCLUDEPATH += /usr/include/signon-qt5
