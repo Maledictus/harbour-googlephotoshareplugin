@@ -22,16 +22,12 @@ QList<TransferMethodInfo> GooglePhotoPluginInfo::info() const
 
 void GooglePhotoPluginInfo::query()
 {
-    qWarning() << Q_FUNC_INFO;
     Accounts::Manager manager("sharing");
-
-    // Get the list of enabled AccountService objects of type e-mail.
     const auto& accountsIds = manager.accountListEnabled();
     for (const auto& id : accountsIds) {
         Accounts::Account *acc = manager.account(id);
-        if (!acc)
-        {
-            qWarning() << Q_FUNC_INFO << "invalid account";
+        if (!acc) {
+            continue;
         }
 
         if (acc->providerName() != "googlephoto") {
@@ -42,8 +38,9 @@ void GooglePhotoPluginInfo::query()
         info.displayName = QLatin1String("GooglePhoto");
         info.userName = acc->displayName();
         info.accountId = id;
+        info.accountIcon = QLatin1String("/usr/share/harbour-googlephotoshareplugin/icons/picasa.png");
         info.methodId = QLatin1String("GooglePhotoSharePlugin");
-        info.shareUIPath = QLatin1String("/usr/share/harbour-googlephotoshareplugin/qml/GooglePhotoShareUi.qml");
+        info.shareUIPath = QLatin1String("/usr/share/nemo-transferengine/plugins/GooglePhotoShareUi.qml");
         info.capabilitities = QStringList({ QLatin1String("image/*") });
         m_InfoList << info;
     }

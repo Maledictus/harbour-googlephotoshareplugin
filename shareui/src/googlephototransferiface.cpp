@@ -10,7 +10,6 @@
 
 GooglePhotoSharePlugin::GooglePhotoSharePlugin()
 {
-    qWarning() << Q_FUNC_INFO;
 }
 
 GooglePhotoSharePlugin::~GooglePhotoSharePlugin()
@@ -24,18 +23,15 @@ QString GooglePhotoSharePlugin::pluginId() const
 
 bool GooglePhotoSharePlugin::enabled() const
 {
-    qWarning() << Q_FUNC_INFO;
     return true;
 }
 
 TransferPluginInfo* GooglePhotoSharePlugin::infoObject()
 {
-    qWarning() << Q_FUNC_INFO;
     return new GooglePhotoPluginInfo;
 }
 
 MediaTransferInterface* GooglePhotoSharePlugin::transferObject()
 {
-    qWarning() << Q_FUNC_INFO;
     return new GooglePhotoMediaTransfer;
 }

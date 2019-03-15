@@ -10,12 +10,15 @@ QT += network
 
 CONFIG += plugin link_pkgconfig
 
-PKGCONFIG += nemotransferengine-qt5 mlite5 accounts-qt5
+PKGCONFIG += nemotransferengine-qt5 accounts-qt5 libsignon-qt5 libsailfishkeyprovider
 
 qml.path = /usr/share/nemo-transferengine/plugins
 qml.files = qml/GooglePhotoShareUi.qml
 
-INSTALLS += target qml
+icons.files = icons/picasa.png
+icons.path = /usr/share/harbour-googlephotoshareplugin/icons
+
+INSTALLS += target qml icons
 
 DISTFILES += qml/GooglePhotoShareUi.qml
 

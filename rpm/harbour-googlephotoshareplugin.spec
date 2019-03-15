@@ -19,8 +19,12 @@ Source0:    %{name}-%{version}.tar.bz2
 Requires:   sailfishsilica-qt5 >= 0.10.9
 Requires:   nemo-transferengine-qt5 >= 0.3.1
 Requires:   declarative-transferengine-qt5 >= 0.0.44
+Requires:   libsignon-qt5
+Requires:   libsailfishkeyprovider
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(nemotransferengine-qt5)
+BuildRequires:  pkgconfig(libsignon-qt5)
+BuildRequires:  pkgconfig(libsailfishkeyprovider)
 
 %description
 Transfer engine plugin gives possibility to share images with your google photo account
@@ -56,5 +60,6 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{_libdir}/nemo-transferengine/plugins/*.so
 %{_datadir}/nemo-transferengine/plugins/GooglePhotoShareUi.qml
+%{_datadir}/%{name}
 # >> files
 # << files
