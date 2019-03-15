@@ -26,6 +26,5 @@ public slots:
     void cancel();
     void start();
 private slots:
-    void handleGotIdentityInfo(const SignOn::IdentityInfo& info);
     void handleGotAuthSessionResponce(const SignOn::SessionData& sessionData);
 };

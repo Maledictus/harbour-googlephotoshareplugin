@@ -4,6 +4,7 @@
 
 #include <accounts-qt5/Accounts/Account>
 #include <accounts-qt5/Accounts/Manager>
+#include <libsailfishkeyprovider/sailfishkeyprovider.h>
 
 GooglePhotoMediaTransfer::GooglePhotoMediaTransfer(QObject *parent)
 : MediaTransferInterface(parent)
@@ -57,16 +58,15 @@ void GooglePhotoMediaTransfer::start()
         return;
     }
 
+    Accounts::Service service = manager.service("googlephoto-sharing");
+    acc->selectService(service);
+
     SignOn::Identity *identity = SignOn::Identity::existingIdentity(acc->credentialsId());
     if (!identity) {
         qWarning() << "Failed to find GooglePhoto account signon identity!";
         cancel();
         return;
     }
-
-    connect(identity, &SignOn::Identity::info,
-            this, &GooglePhotoMediaTransfer::handleGotIdentityInfo);
-    identity->queryInfo();
 
     SignOn::AuthSessionP authSession = identity->createSession(QStringLiteral("oauth2"));
     if (!authSession) {
@@ -76,42 +76,41 @@ void GooglePhotoMediaTransfer::start()
 
     connect(authSession.data(), &SignOn::AuthSession::response,
             this, &GooglePhotoMediaTransfer::handleGotAuthSessionResponce);
-    connect(authSession.data(), &SignOn::AuthSession::error, [] (const SignOn::Error &err) {
+    connect(authSession.data(), &SignOn::AuthSession::error, [this] (const SignOn::Error &err) {
         qWarning() << "SignOn error!: " << err.type() << err.message();
+        cancel();
     });
 
-    SignOn::SessionData sessionData({
-            { "Host", "accounts.google.com" },
-            { "AuthPath", "o/oauth2/auth?access_type=offline" },
-            { "TokenPath","o/oauth2/token" },
-            { "RedirectUri", "urn:ietf:wg:oauth:2.0:oob"},
-            { "ResponseType", "code"},
-            { "ClientId", "844868161425-usj7ht7n97q02tq0n9ulvaf3rolhakjb.apps.googleusercontent.com"},
-            { "ClientSecret", "5aJTCCkCOLSc4uFfyv79wgpL" }
-                });
-    authSession->process(sessionData, QStringLiteral("web_server"));
-}
+    QVariantMap sessionContent {
+        { "Host", acc->valueAsString("auth/oauth2/web_server/Host") },
+        { "AuthPath", acc->valueAsString("auth/oauth2/web_server/AuthPath") },
+        { "TokenPath", acc->valueAsString("auth/oauth2/web_server/TokenPath") },
+        { "RedirectUri", acc->valueAsString("auth/oauth2/web_server/RedirectUri") }
+    };
 
-void GooglePhotoMediaTransfer::handleGotIdentityInfo(const SignOn::IdentityInfo& info)
-{
-    qWarning() << Q_FUNC_INFO;
-    qWarning() << info.isStoringSecret()
-               << info.secret()
-               << info.type()
-               << info.methods()
-               << info.accessControlList()
-               << info.owner()
-               << info.caption()
-               << info.userName();
+    char *clientIdBuf = nullptr;
+    int ret = SailfishKeyProvider_storedKey(acc->providerName().toLocal8Bit(),
+            acc->selectedService().name().toLocal8Bit(), "client_id", &clientIdBuf);
+    if (ret) {
+        cancel();
+        return;
+    }
+    char *clientSecretBuf = nullptr;
+    ret = SailfishKeyProvider_storedKey(acc->providerName().toLocal8Bit(),
+            acc->selectedService().name().toLocal8Bit(), "client_secret", &clientSecretBuf);
+    if (ret) {
+        cancel();
+        return;
+    }
+    sessionContent.insert("ClientId", QString(clientIdBuf));
+    sessionContent.insert("ClientSecret", QString(clientSecretBuf));
+    free(clientIdBuf);
+    free(clientSecretBuf);
+
+    authSession->process(SignOn::SessionData(sessionContent), acc->valueAsString("auth/mechanism"));
 }
 
 void GooglePhotoMediaTransfer::handleGotAuthSessionResponce(const SignOn::SessionData& sessionData)
 {
-    qWarning() << Q_FUNC_INFO;
-    qWarning() << sessionData.getAccessControlTokens()
-               << sessionData.getProperty("AccessToken")
-               << sessionData.Realm()
-               << sessionData.RenewToken()
-               << sessionData.WindowId()
-               << sessionData.Caption() << sessionData.Secret() << sessionData.UserName();
+    qWarning() << Q_FUNC_INFO << sessionData.getProperty("AccessToken");
 }
